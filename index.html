@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>數學跑酷 - 三線測試</title>
+    <style>
+        /* 遊戲畫面背景 */
+        #game-board {
+            width: 300px;
+            height: 400px;
+            background-color: #333;
+            position: relative;
+            margin: 50px auto; /* 置中 */
+            overflow: hidden;
+            border: 4px solid #fff;
+            border-radius: 10px;
+        }
+        
+        /* 畫地下嗰兩條虛線分隔線 */
+        .lane-line {
+            width: 2px;
+            height: 100%;
+            background-image: linear-gradient(#fff 50%, transparent 50%);
+            background-size: 2px 40px;
+            position: absolute;
+            top: 0;
+        }
+        #line-left { left: 100px; }
+        #line-right { left: 200px; }
+
+        /* 玩家架車 (紅色方塊) */
+        #car {
+            width: 60px;
+            height: 80px;
+            background-color: #ff4757;
+            border-radius: 10px;
+            position: absolute;
+            bottom: 20px;
+            /* 加入 transition 令架車轉線時有滑動效果，唔會太生硬 */
+            transition: left 0.15s ease-out; 
+        }
+    </style>
+</head>
+<body>
+
+    <div id="game-board">
+        <div class="lane-line" id="line-left"></div>
+        <div class="lane-line" id="line-right"></div>
+        <div id="car" style="left: 120px;"></div> 
+    </div>
+
+    <script>
+        // --- 遊戲邏輯 ---
+        
+        // 0 = 左, 1 = 中, 2 = 右
+        let currentLane = 1; 
+        const carElement = document.getElementById('car');
+
+        // 監聽玩家撳鍵盤
+        document.addEventListener('keydown', function(event) {
+            // 如果撳咗「向左箭咀」，而且未去到最左邊 (大於0)
+            if (event.key === 'ArrowLeft' && currentLane > 0) {
+                currentLane--; // 減 1
+                updateCarPosition();
+            }
+            // 如果撳咗「向右箭咀」，而且未去到最右邊 (細於2)
+            else if (event.key === 'ArrowRight' && currentLane < 2) {
+                currentLane++; // 加 1
+                updateCarPosition();
+            }
+        });
+
+        // 更新架車嘅畫面位置
+        function updateCarPosition() {
+            // 每一條線闊 100px。加 20px 係為咗令架車喺條線中間
+            const newLeftPosition = (currentLane * 100) + 20;
+            carElement.style.left = newLeftPosition + 'px';
+        }
+    </script>
+
+</body>
+</html>
