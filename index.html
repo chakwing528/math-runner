@@ -1,80 +1,166 @@
 <!DOCTYPE html>
-<html>
+<html lang="zh-HK">
 <head>
     <meta charset="UTF-8">
-    <title>數學跑酷 - 三線測試</title>
+    <title>數學跑酷 - 畫面優化版</title>
     <style>
-        /* 遊戲畫面背景 */
-        #game-board {
-            width: 300px;
-            height: 400px;
-            background-color: #333;
-            position: relative;
-            margin: 50px auto; /* 置中 */
-            overflow: hidden;
-            border: 4px solid #fff;
-            border-radius: 10px;
+        /* 整個網頁嘅背景 (夜空/深色背景) */
+        body {
+            margin: 0;
+            background-color: #1a1a2e; 
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            color: white;
+            /* 防止手機玩嗰陣拉動到個畫面 */
+            overflow: hidden; 
         }
-        
-        /* 畫地下嗰兩條虛線分隔線 */
-        .lane-line {
-            width: 2px;
-            height: 100%;
-            background-image: linear-gradient(#fff 50%, transparent 50%);
-            background-size: 2px 40px;
-            position: absolute;
-            top: 0;
-        }
-        #line-left { left: 100px; }
-        #line-right { left: 200px; }
 
-        /* 玩家架車 (紅色方塊) */
-        #car {
-            width: 60px;
-            height: 80px;
-            background-color: #ff4757;
-            border-radius: 10px;
+        /* 遊戲主體外框 (加咗圓角同發光陰影) */
+        #game-container {
+            width: 320px;
+            background: linear-gradient(to bottom, #16213e, #0f3460);
+            border-radius: 20px;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.6), 0 0 20px rgba(233, 69, 96, 0.3);
+            overflow: hidden;
+            position: relative;
+        }
+
+        /* 頂部 UI 面板 (顯示分數同題目) */
+        #ui-bar {
+            background: rgba(0, 0, 0, 0.7);
+            padding: 15px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 3px solid #e94560;
+            z-index: 10;
+            position: relative;
+        }
+
+        #score {
+            font-size: 16px;
+            font-weight: bold;
+            color: #4cd137;
+        }
+
+        #question {
+            font-size: 22px;
+            font-weight: 900;
+            color: #fbc531;
+            text-shadow: 0 0 8px rgba(251, 197, 49, 0.6);
+        }
+
+        /* 跑道區域 */
+        #game-board {
+            width: 100%;
+            height: 450px;
+            background-color: #2f3640; /* 柏油路顏色 */
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* 會自動向後捲動嘅虛線 (製造速度感) */
+        .lane-line {
+            width: 4px;
+            height: 200%; /* 兩倍高度用嚟做循環動畫 */
+            background-image: linear-gradient(to bottom, transparent 50%, #dcdde1 50%);
+            background-size: 100% 80px;
             position: absolute;
-            bottom: 20px;
-            /* 加入 transition 令架車轉線時有滑動效果，唔會太生硬 */
-            transition: left 0.15s ease-out; 
+            top: -100%;
+            /* 動畫：0.6秒跑完一次，無限輪迴 */
+            animation: scrollRoad 0.6s linear infinite; 
+        }
+        #line-left { left: 106px; }
+        #line-right { left: 212px; }
+
+        @keyframes scrollRoad {
+            0% { top: -100%; }
+            100% { top: 0; }
+        }
+
+        /* 玩家跑車設計 */
+        #car {
+            width: 50px;
+            height: 80px;
+            /* 車身漸變色 */
+            background: linear-gradient(to bottom, #ff4757, #c0392b);
+            border-radius: 12px 12px 4px 4px;
+            position: absolute;
+            bottom: 25px;
+            /* 轉線時嘅平滑過渡效果，改用更具動感嘅曲線 */
+            transition: left 0.15s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+            box-shadow: 0 10px 15px rgba(0,0,0,0.5);
+            z-index: 5;
+        }
+
+        /* 車頭擋風玻璃 (用 CSS 偽元素畫) */
+        #car::before {
+            content: '';
+            position: absolute;
+            top: 20px;
+            left: 5px;
+            width: 40px;
+            height: 25px;
+            background-color: #1e272e;
+            border-radius: 4px;
+        }
+
+        /* 車頭燈發光效果 (用 CSS 偽元素畫) */
+        #car::after {
+            content: '';
+            position: absolute;
+            top: -3px;
+            left: 5px;
+            width: 40px;
+            height: 10px;
+            background: transparent;
+            /* 左右兩邊各一盞黃色燈 */
+            box-shadow: -16px 0 12px #fbc531, 16px 0 12px #fbc531;
+            border-radius: 50%;
+            opacity: 0.9;
         }
     </style>
 </head>
 <body>
 
-    <div id="game-board">
-        <div class="lane-line" id="line-left"></div>
-        <div class="lane-line" id="line-right"></div>
-        <div id="car" style="left: 120px;"></div> 
+    <div id="game-container">
+        <div id="ui-bar">
+            <div id="score">分數: 0</div>
+            <div id="question">1 + 1 = ?</div>
+        </div>
+
+        <div id="game-board">
+            <div class="lane-line" id="line-left"></div>
+            <div class="lane-line" id="line-right"></div>
+            <div id="car" style="left: 135px;"></div> 
+        </div>
     </div>
 
     <script>
-        // --- 遊戲邏輯 ---
-        
         // 0 = 左, 1 = 中, 2 = 右
         let currentLane = 1; 
         const carElement = document.getElementById('car');
+        
+        // 預先計算好三條線嘅完美 X 座標 (置中對齊)
+        const lanePositions = [28, 135, 241]; 
 
-        // 監聽玩家撳鍵盤
         document.addEventListener('keydown', function(event) {
-            // 如果撳咗「向左箭咀」，而且未去到最左邊 (大於0)
             if (event.key === 'ArrowLeft' && currentLane > 0) {
-                currentLane--; // 減 1
+                currentLane--; 
                 updateCarPosition();
             }
-            // 如果撳咗「向右箭咀」，而且未去到最右邊 (細於2)
             else if (event.key === 'ArrowRight' && currentLane < 2) {
-                currentLane++; // 加 1
+                currentLane++; 
                 updateCarPosition();
             }
         });
 
-        // 更新架車嘅畫面位置
         function updateCarPosition() {
-            // 每一條線闊 100px。加 20px 係為咗令架車喺條線中間
-            const newLeftPosition = (currentLane * 100) + 20;
-            carElement.style.left = newLeftPosition + 'px';
+            // 直接讀取 Array 入面嘅座標
+            carElement.style.left = lanePositions[currentLane] + 'px';
         }
     </script>
 
