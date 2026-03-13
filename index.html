@@ -2,9 +2,9 @@
 <html lang="zh-HK">
 <head>
     <meta charset="UTF-8">
-    <title>數學跑酷 - 畫面優化版</title>
+    <title>數學跑酷 - V1</title>
     <style>
-        /* 整個網頁嘅背景 (夜空/深色背景) */
+        /* 基本背景與外框設定 */
         body {
             margin: 0;
             background-color: #1a1a2e; 
@@ -14,11 +14,9 @@
             height: 100vh;
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             color: white;
-            /* 防止手機玩嗰陣拉動到個畫面 */
             overflow: hidden; 
         }
 
-        /* 遊戲主體外框 (加咗圓角同發光陰影) */
         #game-container {
             width: 320px;
             background: linear-gradient(to bottom, #16213e, #0f3460);
@@ -28,16 +26,30 @@
             position: relative;
         }
 
-        /* 頂部 UI 面板 (顯示分數同題目) */
+        /* 頂部 UI 面板 */
         #ui-bar {
-            background: rgba(0, 0, 0, 0.7);
-            padding: 15px 20px;
+            background: rgba(0, 0, 0, 0.8);
+            padding: 10px 15px;
             display: flex;
             justify-content: space-between;
             align-items: center;
             border-bottom: 3px solid #e94560;
             z-index: 10;
             position: relative;
+        }
+
+        /* 版本號設計 */
+        #version {
+            position: absolute;
+            top: 5px;
+            left: 5px;
+            font-size: 10px;
+            color: #888;
+            font-weight: bold;
+        }
+
+        #score-container {
+            margin-top: 10px;
         }
 
         #score {
@@ -51,26 +63,28 @@
             font-weight: 900;
             color: #fbc531;
             text-shadow: 0 0 8px rgba(251, 197, 49, 0.6);
+            margin-top: 10px;
         }
 
-        /* 跑道區域 */
+        /* 遊戲跑道 */
         #game-board {
             width: 100%;
             height: 450px;
-            background-color: #2f3640; /* 柏油路顏色 */
+            background-color: #2f3640; 
             position: relative;
             overflow: hidden;
+            /* 加入閃爍效果嘅過渡動畫 */
+            transition: background-color 0.1s; 
         }
 
-        /* 會自動向後捲動嘅虛線 (製造速度感) */
+        /* 捲動嘅虛線 */
         .lane-line {
             width: 4px;
-            height: 200%; /* 兩倍高度用嚟做循環動畫 */
+            height: 200%; 
             background-image: linear-gradient(to bottom, transparent 50%, #dcdde1 50%);
             background-size: 100% 80px;
             position: absolute;
             top: -100%;
-            /* 動畫：0.6秒跑完一次，無限輪迴 */
             animation: scrollRoad 0.6s linear infinite; 
         }
         #line-left { left: 106px; }
@@ -81,88 +95,201 @@
             100% { top: 0; }
         }
 
-        /* 玩家跑車設計 */
+        /* 玩家跑車 */
         #car {
             width: 50px;
             height: 80px;
-            /* 車身漸變色 */
             background: linear-gradient(to bottom, #ff4757, #c0392b);
             border-radius: 12px 12px 4px 4px;
             position: absolute;
             bottom: 25px;
-            /* 轉線時嘅平滑過渡效果，改用更具動感嘅曲線 */
-            transition: left 0.15s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+            transition: left 0.1s cubic-bezier(0.25, 0.46, 0.45, 0.94);
             box-shadow: 0 10px 15px rgba(0,0,0,0.5);
             z-index: 5;
         }
 
-        /* 車頭擋風玻璃 (用 CSS 偽元素畫) */
         #car::before {
             content: '';
             position: absolute;
-            top: 20px;
-            left: 5px;
-            width: 40px;
-            height: 25px;
+            top: 20px; left: 5px;
+            width: 40px; height: 25px;
             background-color: #1e272e;
             border-radius: 4px;
         }
 
-        /* 車頭燈發光效果 (用 CSS 偽元素畫) */
         #car::after {
             content: '';
             position: absolute;
-            top: -3px;
-            left: 5px;
-            width: 40px;
-            height: 10px;
+            top: -3px; left: 5px;
+            width: 40px; height: 10px;
             background: transparent;
-            /* 左右兩邊各一盞黃色燈 */
             box-shadow: -16px 0 12px #fbc531, 16px 0 12px #fbc531;
             border-radius: 50%;
             opacity: 0.9;
         }
+
+        /* 數學門 (障礙物) 系統 */
+        #gates-container {
+            position: absolute;
+            width: 100%;
+            height: 40px;
+            top: -50px; /* 一開始喺畫面外面 */
+            z-index: 4;
+        }
+
+        .gate {
+            position: absolute;
+            width: 60px;
+            height: 40px;
+            background: rgba(255, 255, 255, 0.9);
+            color: #2f3640;
+            font-size: 22px;
+            font-weight: 900;
+            text-align: center;
+            line-height: 40px;
+            border-radius: 8px;
+            border: 3px solid #e1b12c;
+            box-shadow: 0 5px 10px rgba(0,0,0,0.3);
+        }
+        
+        /* 門嘅 X 座標要同車嘅三條線對齊 */
+        #gate-0 { left: 23px; }
+        #gate-1 { left: 130px; }
+        #gate-2 { left: 236px; }
+
     </style>
 </head>
 <body>
 
     <div id="game-container">
         <div id="ui-bar">
-            <div id="score">分數: 0</div>
-            <div id="question">1 + 1 = ?</div>
+            <div id="version">V1</div>
+            <div id="score-container">
+                <div id="score">分數: 0</div>
+            </div>
+            <div id="question">準備...</div>
         </div>
 
         <div id="game-board">
             <div class="lane-line" id="line-left"></div>
             <div class="lane-line" id="line-right"></div>
+            
+            <div id="gates-container">
+                <div class="gate" id="gate-0"></div>
+                <div class="gate" id="gate-1"></div>
+                <div class="gate" id="gate-2"></div>
+            </div>
+
             <div id="car" style="left: 135px;"></div> 
         </div>
     </div>
 
     <script>
-        // 0 = 左, 1 = 中, 2 = 右
-        let currentLane = 1; 
-        const carElement = document.getElementById('car');
-        
-        // 預先計算好三條線嘅完美 X 座標 (置中對齊)
+        // --- 玩家控制設定 ---
+        let currentLane = 1; // 0=左, 1=中, 2=右
         const lanePositions = [28, 135, 241]; 
+        const carElement = document.getElementById('car');
 
         document.addEventListener('keydown', function(event) {
             if (event.key === 'ArrowLeft' && currentLane > 0) {
                 currentLane--; 
-                updateCarPosition();
+                carElement.style.left = lanePositions[currentLane] + 'px';
             }
             else if (event.key === 'ArrowRight' && currentLane < 2) {
                 currentLane++; 
-                updateCarPosition();
+                carElement.style.left = lanePositions[currentLane] + 'px';
             }
         });
 
-        function updateCarPosition() {
-            // 直接讀取 Array 入面嘅座標
-            carElement.style.left = lanePositions[currentLane] + 'px';
-        }
-    </script>
+        // --- 遊戲邏輯與計分系統 ---
+        let score = 0;
+        let currentAnswer = 0;
+        let gateOptions = []; // 裝住三個門嘅數字
+        let gateY = -50; // 門嘅 Y 座標 (高度)
+        let gameSpeed = 3.5; // 門跌落嚟嘅速度
+        let isColliding = false; // 防止重複計分嘅鎖定
 
+        // 1. 生成數學題同答案
+        function generateMathProblem() {
+            // 隨機生成兩個 1-10 嘅數字
+            let num1 = Math.floor(Math.random() * 10) + 1;
+            let num2 = Math.floor(Math.random() * 10) + 1;
+            currentAnswer = num1 + num2;
+            
+            // 更新 UI 題目
+            document.getElementById('question').innerText = `${num1} + ${num2} = ?`;
+
+            // 生成兩個錯嘅答案 (確保唔會同正確答案一樣)
+            let wrong1 = currentAnswer + Math.floor(Math.random() * 5) + 1;
+            let wrong2 = currentAnswer - Math.floor(Math.random() * 5) - 1;
+            if (wrong2 <= 0) wrong2 = currentAnswer + 3;
+
+            // 將三個答案放入 Array，然後打亂順序 (Shuffle)
+            gateOptions = [currentAnswer, wrong1, wrong2];
+            gateOptions.sort(() => Math.random() - 0.5);
+
+            // 將數字顯示喺三個門上面
+            document.getElementById('gate-0').innerText = gateOptions[0];
+            document.getElementById('gate-1').innerText = gateOptions[1];
+            document.getElementById('gate-2').innerText = gateOptions[2];
+
+            // 重置門嘅位置同碰撞鎖定
+            gateY = -50;
+            isColliding = false;
+        }
+
+        // 2. 判斷答對定答錯
+        function checkCollision() {
+            // 睇吓玩家架車而家喺邊條線 (0, 1, 或 2)
+            let selectedAnswer = gateOptions[currentLane];
+            const board = document.getElementById('game-board');
+
+            if (selectedAnswer === currentAnswer) {
+                // 答對：加 10 分，畫面閃綠光
+                score += 10;
+                board.style.backgroundColor = '#20402b'; // 變暗綠色
+            } else {
+                // 答錯：扣 10 分，畫面閃紅光
+                score -= 10;
+                board.style.backgroundColor = '#402020'; // 變暗紅色
+            }
+
+            // 更新分數顯示
+            document.getElementById('score').innerText = `分數: ${score}`;
+            
+            // 0.15秒後將背景顏色變返正常嘅柏油路色
+            setTimeout(() => {
+                board.style.backgroundColor = '#2f3640';
+            }, 150);
+        }
+
+        // 3. 遊戲主引擎 (Game Loop) - 每秒執行 60 次
+        function gameLoop() {
+            // 令門口不斷向下移
+            gateY += gameSpeed;
+            document.getElementById('gates-container').style.top = gateY + 'px';
+
+            // 碰撞偵測：當門跌到落架車嘅高度 (大約 350px - 400px 之間)
+            if (gateY > 340 && gateY < 400) {
+                if (!isColliding) {
+                    isColliding = true; // 鎖定，等佢唔好一秒內扣幾次分
+                    checkCollision();
+                }
+            }
+
+            // 當門跌出畫面底層 (大約 450px)，就重新出下一條題目
+            if (gateY > 450) {
+                generateMathProblem();
+            }
+
+            // 呼叫瀏覽器繼續執行下一個畫面
+            requestAnimationFrame(gameLoop);
+        }
+
+        // --- 啟動遊戲 ---
+        generateMathProblem(); // 出第一條題目
+        requestAnimationFrame(gameLoop); // 啟動引擎
+
+    </script>
 </body>
 </html>
